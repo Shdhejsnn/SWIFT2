@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Topics</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        pre { background-color: #f4f4f4; padding: 10px; border-radius: 5px; }
+        .container { max-width: 800px; margin: auto; }
+        a { display: block; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Topics</h1>
+        {% if topics %}
+            <ul>
+                {% for topic in topics %}
+                    <li><strong>Topic {{ topic.topic_id }}:</strong> {{ topic.words }}</li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>No topics available.</p>
+        {% endif %}
+        <a href="/">Back to Home</a>
+    </div>
+</body>
+</html>
