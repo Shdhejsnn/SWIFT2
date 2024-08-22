@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meeting Minutes Generator</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 0; 
+            padding: 0; 
+            background-color: #f0f2f5; 
+            color: #333; 
+        }
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            position: relative;
+        }
+        h1 {
+            text-align: center;
+            color: #007BFF;
+            margin-bottom: 20px;
+            font-size: 2em;
+            font-weight: 600;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        textarea { 
+            width: 100%; 
+            height: 200px; 
+            padding: 15px; 
+            border: 1px solid #ccc; 
+            border-radius: 8px; 
+            box-sizing: border-box;
+            font-size: 16px;
+            line-height: 1.5;
+            resize: vertical;
+        }
+        input[type="date"] {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        button { 
+            padding: 12px 25px; 
+            font-size: 16px; 
+            color: #ffffff; 
+            background-color: #007BFF; 
+            border: none; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            transition: background-color 0.3s ease;
+        }
+        button:hover { 
+            background-color: #0056b3; 
+        }
+        .results { 
+            margin-top: 30px; 
+            padding: 20px; 
+            background-color: #f9f9f9; 
+            border: 1px solid #ddd; 
+            border-radius: 8px; 
+        }
+        .results h2 { 
+            margin-top: 0; 
+            color: #007BFF;
+            font-size: 1.5em;
+            font-weight: 600;
+        }
+        .results a { 
+            display: block; 
+            margin: 10px 0; 
+            color: #007BFF; 
+            text-decoration: none; 
+            font-size: 18px;
+        }
+        .results a:hover { 
+            text-decoration: underline; 
+        }
+        .sentiment {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #e9ecef;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 18px;
+        }
+        .sentiment span {
+            font-weight: bold;
+        }
+        .calendar-icon {
+            font-size: 24px;
+            cursor: pointer;
+            color: #007BFF;
+            text-align: center;
+            display: inline-block;
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 50%;
+            background-color: #e9ecef;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: background-color 0.3s ease;
+        }
+        .calendar-icon:hover {
+            background-color: #d6d6d6;
+        }
+        #calendar {
+            margin-top: 20px;
+            width: 100%;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .fc-header-toolbar {
+            background-color: #6a6f75;
+            color: #ffffff;
+            border-bottom: 1px solid #ddd;
+        }
+        .fc-daygrid-day {
+            font-size: 14px;
+            text-align: center;
+        }
+        .fc-daygrid-day-top {
+            background-color: #4794e0;
+            color: #ffffff;
+        }
+        .fc-daygrid-day-number {
+            font-size: 14px;
+        }
+        .fc-daygrid-day-content {
+            padding: 5px;
+        }
+    </style>
+
+    <!-- FullCalendar & jQuery -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<body>
+    <div class="container">
+        <h1>Meeting Minutes Generator</h1>
+        <form id="transcriptForm">
+            <textarea id="transcript" name="transcript" placeholder="Enter the meeting transcript here..." required></textarea>
+            <input type="date" id="eventDate" name="eventDate" required>
+            <button type="submit">Generate Minutes</button>
+        </form>
+        
+        <!-- Display the generated meeting minutes -->
+        <div class="results" id="results"></div>
+       
+        <!-- Display sentiment analysis -->
+        <div class="sentiment" id="sentiment">
+            <span id="sentimentLabel"></span>
+        </div>
+
+        <!-- Calendar Icon -->
+        <div class="calendar-icon" id="showCalendar">
+            📅
+        </div>
+
+        <!-- Calendar Integration -->
+        <div id="calendar"></div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var calendarEl = document.getElementById('calendar');
+            if (!calendarEl) {
+                console.error('Calendar element not found');
+                return;
+            }
+    
+            var calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                events: '/get_events',  // Ensure this endpoint returns data for the full month
+                eventClick: function(info) {
+                    window.location.href = `/view_summary/${info.event.startStr}`; // Fixed URL interpolation
+                },
+                height: 'auto', // Adjust calendar height automatically
+                editable: false, // Set to true if you want to make events draggable or resizable
+                dayMaxEvents: true // Show "more" link when too many events
+            });
+    
+            calendar.render();
+    
+            document.getElementById('showCalendar').addEventListener('click', function() {
+                const calendarContainer = document.getElementById('calendar');
+                if (calendarContainer.style.display === 'none' || calendarContainer.style.display === '') {
+                    calendarContainer.style.display = 'block';
+                } else {
+                    calendarContainer.style.display = 'none';
+                }
+            });
+        });
+    
+        document.getElementById('transcriptForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+    
+            // Save transcript to localStorage
+            const transcript = document.getElementById('transcript').value;
+            const eventDate = document.getElementById('eventDate').value; // Get event date value
+            localStorage.setItem('transcript', transcript);
+    
+            const formData = new FormData(this);
+            
+            fetch('/generate_minutes', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Display results
+                document.getElementById('results').innerHTML = `
+                    <h2>Results</h2>
+                    <a href="/tokenized">View Tokenized Text</a>
+                    <a href="/summary">View Summary</a>
+                    <a href="/topics">View Topics</a>
+                    <a href="/keywords">View Keywords</a>
+                `;
+    
+                // Display sentiment analysis
+                document.getElementById('sentimentLabel').innerText = `Sentiment: ${data.sentiment}`;
+            })
+            .catch(error => console.error('Error:', error));
+        });
+    </script>
+    
+</body>
+</html>
